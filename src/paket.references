@@ -1,7 +1,0 @@
-group Client
-    Fable.Elmish.React
-    FSharp.Core
-    Fable.Core
-    Fable.Browser.Dom
-    Thoth.Fetch
-    Fable.Elmish
