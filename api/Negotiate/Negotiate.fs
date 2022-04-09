@@ -15,6 +15,6 @@ module Negotiate =
     [<FunctionName("Negotiate")>]
     let run 
         ([<HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)>] req: HttpRequest) 
-        ([<SignalRConnectionInfo(HubName = "serverless")>] connectionInfo: SignalRConnectionInfo)
+        ([<SignalRConnectionInfo(HubName = "chat")>] connectionInfo: SignalRConnectionInfo)
         (log: ILogger) =
             connectionInfo
