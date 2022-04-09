@@ -2,11 +2,11 @@ namespace Company.Function
 
 open System
 open System.IO
-open System.Net
-open System.Text.Json
-open System.Text.Json.Serialization
-open Microsoft.Azure.Functions.Worker
-open Microsoft.Azure.Functions.Worker.Http
+open Microsoft.AspNetCore.Mvc
+open Microsoft.Azure.WebJobs
+open Microsoft.Azure.WebJobs.Extensions.Http
+open Microsoft.AspNetCore.Http
+open Newtonsoft.Json
 open Microsoft.Extensions.Logging
 
 module GetMessage =
@@ -19,20 +19,33 @@ module GetMessage =
     [<Literal>]
     let Name = "name"
 
-    [<Function("GetMessage")>]
+    [<FunctionName("GetMessage")>]
     let run
-        ([<HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)>] req: HttpRequestData)
-        (context: FunctionContext)
+        ([<HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)>] req: HttpRequest)
+        (log: ILogger)
         =
         async {
+            log.LogInformation("F# HTTP trigger function processed a request.")
+
+            let nameOpt =
+                if req.Query.ContainsKey(Name) then
+                    Some(req.Query.[Name].[0])
+                else
+                    None
+
             use stream = new StreamReader(req.Body)
             let! reqBody = stream.ReadToEndAsync() |> Async.AwaitTask
 
-            
             let data =
-                JsonSerializer.Deserialize<NameContainer>(reqBody)
+                JsonConvert.DeserializeObject<NameContainer>(reqBody)
 
-            let name = req.Url.Query
+            let name =
+                match nameOpt with
+                | Some n -> n
+                | None ->
+                    match data with
+                    | null -> ""
+                    | nc -> nc.Name
 
             let responseMessage =
                 if (String.IsNullOrWhiteSpace(name)) then
@@ -42,13 +55,6 @@ module GetMessage =
                     + name
                     + ". This HTTP triggered function executed successfully."
 
-            let response = req.CreateResponse(HttpStatusCode.OK)
-            response.Headers.Add("Date", "Mon, 18 Jul 2016 16:06:00 GMT");
-            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
-            
-            response.WriteString(responseMessage);
-                
-            
-            return response
+            return OkObjectResult(responseMessage) :> IActionResult
         }
         |> Async.StartAsTask
