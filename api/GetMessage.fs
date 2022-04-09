@@ -2,7 +2,11 @@ namespace Company.Function
 
 open System
 open System.IO
+open System.Net
+open System.Text.Json
+open System.Text.Json.Serialization
 open Microsoft.Azure.Functions.Worker
+open Microsoft.Azure.Functions.Worker.Http
 open Microsoft.Extensions.Logging
 
 module GetMessage =
@@ -17,31 +21,18 @@ module GetMessage =
 
     [<Function("GetMessage")>]
     let run
-        ([<HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)>] req: HttpRequest)
-        (log: ILogger)
+        ([<HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)>] req: HttpRequestData)
+        (context: FunctionContext)
         =
         async {
-            log.LogInformation("F# HTTP trigger function processed a request.")
-
-            let nameOpt =
-                if req.Query.ContainsKey(Name) then
-                    Some(req.Query.[Name].[0])
-                else
-                    None
-
             use stream = new StreamReader(req.Body)
             let! reqBody = stream.ReadToEndAsync() |> Async.AwaitTask
 
+            
             let data =
-                JsonConvert.DeserializeObject<NameContainer>(reqBody)
+                JsonSerializer.Deserialize<NameContainer>(reqBody)
 
-            let name =
-                match nameOpt with
-                | Some n -> n
-                | None ->
-                    match data with
-                    | null -> ""
-                    | nc -> nc.Name
+            let name = req.Url.Query
 
             let responseMessage =
                 if (String.IsNullOrWhiteSpace(name)) then
@@ -51,6 +42,13 @@ module GetMessage =
                     + name
                     + ". This HTTP triggered function executed successfully."
 
-            return OkObjectResult(responseMessage) :> IActionResult
+            let response = req.CreateResponse(HttpStatusCode.OK)
+            response.Headers.Add("Date", "Mon, 18 Jul 2016 16:06:00 GMT");
+            response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
+            
+            response.WriteString(responseMessage);
+                
+            
+            return response
         }
         |> Async.StartAsTask
