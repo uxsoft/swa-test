@@ -1,0 +1,8 @@
+{
+    "IsEncrypted": false,
+    "Values": {
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "AzureSignalRConnectionString": "Endpoint=https://alpaca.service.signalr.net;AccessKey=EJkUTpz7zFcMqx0TjtEz6H+ht5j2HqPCEwoU56w7RjM=;Version=1.0;"
+    }
+}
